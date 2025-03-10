@@ -1,0 +1,1144 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sistema Multi-Agente e Chat IA - Desenvolvimento de Software</title>
+    <!-- Add highlight.js for code syntax highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/styles/atom-one-dark.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.7.0/highlight.min.js"></script>
+    <!-- Add marked.js for markdown parsing -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 20px;
+            padding-bottom: 40px;
+            background-color: #f5f5f5;
+            color: #333;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            overflow: hidden;
+            height: 95vh;
+            display: flex;
+            flex-direction: column;
+            padding-bottom: 20px;
+        }
+
+        .chat-header {
+            background: #6c5ce7;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            flex-shrink: 0;
+        }
+
+        .chat-header h1 {
+            margin: 0;
+            font-size: 28px;
+        }
+
+        .chat-header p {
+            margin: 10px 0 0;
+            font-size: 16px;
+            opacity: 0.9;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #fff;
+            min-height: 300px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 15px;
+            border-radius: 8px;
+            max-width: 85%;
+            line-height: 1.5;
+        }
+
+        .user-message {
+            background: #6c5ce7;
+            color: white;
+            margin-left: auto;
+            box-shadow: 0 2px 5px rgba(108, 92, 231, 0.2);
+        }
+
+        .bot-message {
+            background: #f8f9fa;
+            color: #333;
+            border-left: 4px solid #6c5ce7;
+            overflow-x: auto;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .input-area {
+            padding: 30px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 15px;
+            flex-shrink: 0;
+            margin-top: auto;
+            min-height: 50px;
+        }
+
+        #messageInput, #mistralInput {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+            min-height: 30px;
+            resize: none;
+        }
+
+        #messageInput:focus, #mistralInput:focus {
+            border-color: #6c5ce7;
+            outline: none;
+        }
+
+        button {
+            padding: 15px 30px;
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 500;
+            transition: background 0.3s, transform 0.1s;
+        }
+
+        button:hover {
+            background: #5649c0;
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .loading {
+            text-align: center;
+            color: #666;
+            font-style: italic;
+            padding: 10px;
+        }
+
+        /* Code block styling */
+        pre {
+            background-color: #282c34;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+            margin: 10px 0;
+        }
+
+        code {
+            font-family: 'Fira Code', 'Courier New', monospace;
+            font-size: 14px;
+        }
+
+        .model-badge {
+            font-size: 11px;
+            background: #a29bfe;
+            color: white;
+            padding: 3px 8px;
+            border-radius: 12px;
+            margin-left: 5px;
+            vertical-align: middle;
+        }
+
+        .prompt-type-selector {
+            display: flex;
+            justify-content: center;
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+        }
+
+        .prompt-type-selector select {
+            padding: 8px 15px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            font-size: 14px;
+            background: white;
+        }
+
+        .copy-button {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            padding: 5px 10px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            border-radius: 3px;
+            font-size: 12px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+
+        .bot-message:hover .copy-button {
+            opacity: 1;
+        }
+
+        .tips {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px;
+            font-size: 14px;
+            border-left: 4px solid #a29bfe;
+        }
+
+        .tips h3 {
+            margin-top: 0;
+            color: #6c5ce7;
+        }
+
+        .tips ul {
+            margin: 10px 0 0;
+            padding-left: 20px;
+        }
+
+        .agent-message {
+            position: relative;
+            margin-bottom: 20px;
+            margin-top: 35px;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            line-height: 1.6;
+        }
+
+        .agent-ceo {
+            background: #4834d4;
+            color: white;
+            border-left: 4px solid #686de0;
+        }
+
+        .agent-analyst {
+            background: #6ab04c;
+            color: white;
+            border-left: 4px solid #badc58;
+        }
+
+        .agent-coder {
+            background: #eb4d4b;
+            color: white;
+            border-left: 4px solid #ff7979;
+        }
+
+        .agent-badge {
+            position: absolute;
+            top: -25px;
+            left: 15px;
+            padding: 4px 12px;
+            font-size: 14px;
+            font-weight: bold;
+            border-radius: 15px;
+            background: rgba(255,255,255,0.95);
+            color: #333;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+            z-index: 1;
+        }
+
+        .context-form {
+            background: #fff;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px;
+            flex-shrink: 0;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        }
+
+        .context-form textarea {
+            width: 100%;
+            padding: 15px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            min-height: 150px;
+            max-height: 300px;
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.6;
+            resize: vertical;
+            overflow-y: auto;
+            box-sizing: border-box;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+
+        .context-form h3 {
+            margin: 0 0 15px 0;
+            color: #6c5ce7;
+            font-size: 16px;
+        }
+
+        .context-form button {
+            background: #6c5ce7;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+        }
+
+        .context-form button:hover {
+            background: #5649c0;
+        }
+
+        .agent-thinking {
+            font-style: italic;
+            color: #666;
+            margin: 10px 0;
+            text-align: center;
+        }
+
+        /* Animação de digitação para os agentes */
+        .typing-indicator {
+            display: inline-block;
+            margin-left: 5px;
+        }
+
+        .typing-indicator span {
+            display: inline-block;
+            width: 5px;
+            height: 5px;
+            background: currentColor;
+            border-radius: 50%;
+            margin: 0 2px;
+            opacity: 0.4;
+            animation: typing 1s infinite;
+        }
+
+        .typing-indicator span:nth-child(2) { animation-delay: 0.2s; }
+        .typing-indicator span:nth-child(3) { animation-delay: 0.4s; }
+
+        @keyframes typing {
+            0%, 100% { opacity: 0.4; }
+            50% { opacity: 1; }
+        }
+
+        /* Add new styles for tabs */
+        .tabs {
+            display: flex;
+            background: #fff;
+            padding: 10px 20px 0;
+            border-bottom: 1px solid #eee;
+            flex-shrink: 0;
+        }
+
+        .tab {
+            padding: 12px 25px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+            border-bottom: none;
+            background: #f8f9fa;
+            margin-right: 5px;
+            border-radius: 8px 8px 0 0;
+            font-weight: 500;
+            color: #666;
+            transition: all 0.3s ease;
+        }
+
+        .tab.active {
+            background: #6c5ce7;
+            color: white;
+            border-color: #6c5ce7;
+        }
+
+        .tab:hover:not(.active) {
+            background: #eee;
+        }
+
+        .chat-container {
+            position: relative;
+            display: none;
+            flex: 1;
+            flex-direction: column;
+            overflow: hidden;
+        }
+
+        .chat-container.active {
+            display: flex;
+        }
+
+        /* Mistral direct chat specific styles */
+        .mistral-message {
+            position: relative;
+            background: #6c5ce7;
+            color: white;
+            border-left: 4px solid #5649c0;
+            margin-bottom: 20px;
+            padding: 20px;
+            border-radius: 8px;
+            max-width: 90%;
+            line-height: 1.6;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+
+        .mistral-message pre {
+            background: rgba(0,0,0,0.2);
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .mistral-user-message {
+            background: #f8f9fa;
+            color: #333;
+            margin-left: auto;
+            border-left: none;
+            border-right: 4px solid #6c5ce7;
+        }
+
+        .mistral-user-message pre {
+            background: #282c34;
+            border: none;
+        }
+
+        /* Add timestamp to messages */
+        .message-time {
+            position: absolute;
+            bottom: 5px;
+            right: 10px;
+            font-size: 12px;
+            opacity: 0.7;
+        }
+
+        /* Add styles for clear history button and thinking indicator */
+        .clear-history {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            padding: 8px 15px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.3);
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .clear-history:hover {
+            background: rgba(255,255,255,0.3);
+        }
+
+        .mistral-thinking {
+            font-style: italic;
+            color: #666;
+            margin: 10px 0;
+            text-align: center;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            border-left: 4px solid #6c5ce7;
+        }
+
+        .error-message {
+            background-color: #ffd7d7;
+            border: 1px solid #ffb2b2;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .error-icon {
+            margin-right: 5px;
+        }
+
+        .fade-out {
+            opacity: 0;
+            transition: opacity 0.5s ease-out;
+        }
+
+        /* Add CSS for message status */
+        .message-status {
+            position: absolute;
+            bottom: 5px;
+            right: 80px;
+            font-size: 11px;
+            opacity: 0.7;
+            font-style: italic;
+        }
+
+        /* Mistral input specific styles */
+        #mistralChat .input-area {
+            padding: 30px;
+            background: #fff;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 15px;
+            flex-shrink: 0;
+            margin-top: auto;
+            min-height: 50px;
+        }
+
+        #mistralInput {
+            flex: 1;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: border 0.3s;
+            min-height: 30px;
+            resize: none;
+        }
+
+        #mistralInput:focus {
+            border-color: #6c5ce7;
+            outline: none;
+        }
+
+        /* Make the send button larger for Mistral chat */
+        #mistralChat button {
+            padding: 15px 30px;
+            font-size: 16px;
+        }
+
+        .model-selector {
+            position: relative;
+            padding: 10px;
+            background: #f8f9fa;
+            border-bottom: 1px solid #eee;
+            z-index: 1;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .model-selector select {
+            padding: 8px 15px 8px 35px;
+            border-radius: 5px;
+            border: 1px solid #ddd;
+            background: white;
+            font-size: 14px;
+            color: #333;
+            cursor: pointer;
+            width: 200px;
+            appearance: none;
+            transition: all 0.3s ease;
+        }
+
+        .model-selector .model-icon {
+            position: absolute;
+            left: 22px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 16px;
+            color: #6c5ce7;
+            pointer-events: none;
+        }
+
+        .model-selector .model-info {
+            font-size: 12px;
+            color: #666;
+            background: #e9ecef;
+            padding: 4px 12px;
+            border-radius: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            transition: all 0.3s ease;
+        }
+
+        .model-selector .model-info::before {
+            content: "●";
+            color: #4cd137;
+            font-size: 10px;
+        }
+
+        .model-selector .model-info.active {
+            background: #6c5ce7;
+            color: white;
+        }
+
+        .model-selector .model-info.active::before {
+            color: #4cd137;
+        }
+
+        .developer-credit {
+            font-size: 12px;
+            margin-top: 5px;
+            opacity: 0.8;
+            color: #fff;
+        }
+
+        .developer-credit strong {
+            color: #a29bfe;
+            font-weight: 600;
+        }
+
+        .optimization-notice {
+            font-size: 13px;
+            margin-top: 8px;
+            color: #a29bfe;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 5px;
+        }
+
+        .optimization-notice::before {
+            content: "✨";
+        }
+
+        .optimization-notice::after {
+            content: "✨";
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="chat-header">
+            <h1>Sistema Multi-Agente e Chat IA</h1>
+            <p>Escolha entre o sistema multi-agente com Mistral ou chat direto com modelos customizados (Mistral/Gemma)</p>
+            <p class="optimization-notice">Todos os modelos foram otimizados para máxima performance</p>
+            <p class="developer-credit">Desenvolvido por: <strong>lulzactive</strong></p>
+        </div>
+
+        <div class="tabs">
+            <div class="tab active" onclick="switchTab('agents')">Sistema Multi-Agente</div>
+            <div class="tab" onclick="switchTab('mistral')">Chat Direto (Mistral/Gemma)</div>
+        </div>
+        
+        <div id="agentsChat" class="chat-container active">
+            <button class="clear-history" onclick="clearHistory('agents')">Limpar Histórico</button>
+            <div id="contextForm" class="context-form">
+                <h3>Informações do Projeto</h3>
+                <textarea id="projectContext" placeholder="Por favor, descreva:
+1. Objetivo do projeto
+2. Tecnologias utilizadas
+3. Escala e complexidade
+4. Desafios principais
+5. Restrições importantes"></textarea>
+                <button onclick="submitContext()">Iniciar Colaboração</button>
+                <button id="getPromptsBtn" onclick="getAgentPrompts()" style="display: none; margin-left: 10px; background: #4834d4;">Ver Prompts dos Agentes</button>
+            </div>
+
+            <div class="chat-messages" id="chatMessages">
+                <div class="tips">
+                    <h3>Processo de Colaboração</h3>
+                    <ul>
+                        <li><strong>CEO:</strong> Define estratégia e objetivos</li>
+                        <li><strong>Analista:</strong> Especifica requisitos e arquitetura</li>
+                        <li><strong>Coder:</strong> Implementa soluções técnicas</li>
+                        <li><strong>Analista:</strong> Valida a implementação</li>
+                        <li><strong>CEO:</strong> Avalia resultados e próximos passos</li>
+                    </ul>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="messageInput" placeholder="Descreva o problema ou tarefa... (Enter para enviar, Shift + Enter para nova linha)" onkeydown="handleKeyPress(event)" rows="3" oninput="updateCharCount('messageInput', 'charCount')"></textarea>
+                <span id="charCount" style="align-self: center; font-size: 12px; color: #666;">0 caracteres</span>
+                <button onclick="sendMessage()">Enviar</button>
+            </div>
+        </div>
+
+        <div id="mistralChat" class="chat-container">
+            <button class="clear-history" onclick="clearHistory('mistral')">Limpar Histórico</button>
+            <div class="model-selector">
+                <span class="model-icon">🤖</span>
+                <select id="modelSelect" onchange="updateModel(this.value)">
+                    <option value="mistral-chat">Mistral Chat</option>
+                    <option value="gemma-chat">Gemma Chat</option>
+                </select>
+            </div>
+            <div class="chat-messages" id="mistralMessages">
+                <div class="tips">
+                    <h3>Chat Direto com Mistral</h3>
+                    <p>Converse diretamente com o modelo Mistral sem a estrutura de agentes. Este modo é otimizado para:</p>
+                    <ul>
+                        <li>Respostas técnicas detalhadas</li>
+                        <li>Explicações passo a passo</li>
+                        <li>Análises balanceadas</li>
+                        <li>Suporte multilíngue (responde no mesmo idioma da sua pergunta)</li>
+                        <li>Formatação de código com numeração de linhas</li>
+                    </ul>
+                    <p><small>Modelo de 7B parâmetros, ideal para tarefas complexas</small></p>
+                </div>
+            </div>
+
+            <div class="input-area">
+                <textarea id="mistralInput" 
+                    placeholder="Digite sua mensagem para o Mistral... (Enter para enviar, Shift + Enter para nova linha)" 
+                    onkeydown="handleMistralKeyPress(event)"
+                    oninput="updateCharCount('mistralInput', 'mistralCharCount')"
+                    rows="3"></textarea>
+                <span id="mistralCharCount" style="align-self: center; font-size: 12px; color: #666;">0 caracteres</span>
+                <button onclick="sendMistralMessage()">Enviar</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let projectContextSubmitted = false;
+
+        function submitContext() {
+            const context = document.getElementById('projectContext').value.trim();
+            if (!context) {
+                showError('Por favor, forneça informações sobre o projeto.');
+                return;
+            }
+
+            projectContextSubmitted = true;
+            document.getElementById('getPromptsBtn').style.display = 'inline-block';
+            document.getElementById('contextForm').style.display = 'none';
+            sendMessage(context, true);
+        }
+
+        async function getAgentPrompts() {
+            const thinkingDiv = showThinking('Sistema');
+            try {
+                const response = await fetch('/get_agent_prompts');
+                const data = await response.json();
+                
+                if (data.error) {
+                    showError('Erro: ' + data.error);
+                    appendAgentMessage('Erro: ' + data.error, 'Sistema');
+                } else {
+                    appendAgentMessage(data.response, 'CEO');
+                }
+            } catch (error) {
+                showError('Erro ao obter prompts dos agentes: ' + error);
+                appendAgentMessage('Erro ao obter prompts dos agentes: ' + error, 'Sistema');
+            } finally {
+                thinkingDiv.remove();
+            }
+        }
+
+        function appendAgentMessage(message, agentType, status = 'entregue') {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            
+            let agentClass = '';
+            switch(agentType.toLowerCase()) {
+                case 'ceo':
+                    agentClass = 'agent-ceo';
+                    break;
+                case 'analista':
+                    agentClass = 'agent-analyst';
+                    break;
+                case 'coder':
+                    agentClass = 'agent-coder';
+                    break;
+                default:
+                    agentClass = 'bot-message';
+            }
+
+            messageDiv.className = `agent-message ${agentClass}`;
+            
+            // Adiciona badge do agente
+            const badge = document.createElement('span');
+            badge.className = 'agent-badge';
+            badge.textContent = agentType;
+            messageDiv.appendChild(badge);
+
+            // Adiciona conteúdo com suporte a markdown
+            const content = document.createElement('div');
+            content.style.marginTop = '15px';
+            content.innerHTML = marked.parse(message);
+            messageDiv.appendChild(content);
+
+            // Adiciona botão de cópia
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.textContent = 'Copiar';
+            copyButton.onclick = () => {
+                navigator.clipboard.writeText(message);
+                copyButton.textContent = 'Copiado!';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copiar';
+                }, 2000);
+            };
+            messageDiv.appendChild(copyButton);
+
+            // Aplica highlight em blocos de código
+            messageDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timeSpan);
+
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'message-status';
+            statusSpan.textContent = status;
+            messageDiv.appendChild(statusSpan);
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function appendUserMessage(message, status = 'enviado') {
+            const messagesDiv = document.getElementById('chatMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = 'message user-message';
+            messageDiv.textContent = message;
+
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timeSpan);
+
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'message-status';
+            statusSpan.textContent = status;
+            messageDiv.appendChild(statusSpan);
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showThinking(agent) {
+            const messagesDiv = document.getElementById('chatMessages');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'agent-thinking';
+            thinkingDiv.innerHTML = `${agent} está pensando<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+            messagesDiv.appendChild(thinkingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            return thinkingDiv;
+        }
+
+        async function sendMessage(customMessage = null) {
+            if (!projectContextSubmitted) {
+                showError('Por favor, forneça primeiro as informações do projeto.');
+                return;
+            }
+
+            const input = document.getElementById('messageInput');
+            const message = customMessage || input.value.trim();
+            
+            if (!message) return;
+
+            // Limpa input se não for mensagem customizada
+            if (!customMessage) {
+                input.value = '';
+            }
+
+            // Mostra mensagem do usuário
+            appendUserMessage(message, 'entregue');
+
+            // Mostra indicadores de "pensando" para cada agente
+            const thinkingDivs = [];
+            ['CEO', 'Analista', 'Coder', 'Analista', 'CEO'].forEach(agent => {
+                thinkingDivs.push(showThinking(agent));
+            });
+
+            try {
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        prompt: message,
+                        mode: 'agents'
+                    })
+                });
+
+                const data = await response.json();
+                
+                // Remove todos os indicadores de "pensando"
+                thinkingDivs.forEach(div => div.remove());
+
+                if (data.error) {
+                    showError('Erro: ' + data.error);
+                    appendAgentMessage('Erro: ' + data.error, 'Sistema', 'falha');
+                } else {
+                    // Processa a resposta para separar as contribuições de cada agente
+                    const agentResponses = data.response.split(/###\s+(CEO|Analista|Coder)/i);
+                    
+                    for (let i = 1; i < agentResponses.length; i += 2) {
+                        const agentType = agentResponses[i];
+                        const agentMessage = agentResponses[i + 1];
+                        if (agentMessage) {
+                            appendAgentMessage(agentMessage.trim(), agentType, 'entregue');
+                        }
+                    }
+                }
+            } catch (error) {
+                thinkingDivs.forEach(div => div.remove());
+                showError('Erro: Não foi possível conectar ao servidor');
+                appendAgentMessage(message, 'Sistema', 'falha');
+            }
+        }
+
+        function handleKeyPress(event) {
+            if (event.key === 'Enter') {
+                if (!event.shiftKey) {
+                    event.preventDefault();
+                    sendMessage();
+                }
+            }
+        }
+
+        // Inicializa highlight.js
+        document.addEventListener('DOMContentLoaded', (event) => {
+            hljs.configure({ 
+                languages: ['javascript', 'python', 'bash', 'html', 'css', 'json'],
+                lineNumbers: true
+            });
+            
+            // Update model description based on initial selection
+            const selectedModel = document.getElementById('modelSelect').value;
+            updateModel(selectedModel);
+        });
+
+        // Add new functions for tab switching and Mistral chat
+        function switchTab(tab) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.chat-container').forEach(c => c.classList.remove('active'));
+            
+            if (tab === 'agents') {
+                document.querySelector('.tab:first-child').classList.add('active');
+                document.getElementById('agentsChat').classList.add('active');
+            } else {
+                document.querySelector('.tab:last-child').classList.add('active');
+                document.getElementById('mistralChat').classList.add('active');
+            }
+        }
+
+        async function clearHistory(mode) {
+            try {
+                const response = await fetch('/clear_history', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ mode })
+                });
+
+                if (response.ok) {
+                    // Clear messages from UI
+                    const messagesDiv = mode === 'mistral' ? 
+                        document.getElementById('mistralMessages') : 
+                        document.getElementById('chatMessages');
+                    
+                    // Keep only the tips section
+                    const tips = messagesDiv.querySelector('.tips');
+                    messagesDiv.innerHTML = '';
+                    messagesDiv.appendChild(tips);
+
+                    if (mode === 'agents') {
+                        projectContextSubmitted = false;
+                        document.getElementById('contextForm').style.display = 'block';
+                        document.getElementById('getPromptsBtn').style.display = 'none';
+                    }
+                }
+            } catch (error) {
+                console.error('Error clearing history:', error);
+            }
+        }
+
+        function appendMistralMessage(message, isUser = false, status = 'enviado') {
+            const messagesDiv = document.getElementById('mistralMessages');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `mistral-message ${isUser ? 'mistral-user-message' : ''}`;
+            
+            // Add content with markdown support
+            const content = document.createElement('div');
+            content.innerHTML = marked.parse(message);
+            messageDiv.appendChild(content);
+
+            // Add timestamp
+            const timeSpan = document.createElement('span');
+            timeSpan.className = 'message-time';
+            timeSpan.textContent = new Date().toLocaleTimeString();
+            messageDiv.appendChild(timeSpan);
+
+            // Add status indicator
+            const statusSpan = document.createElement('span');
+            statusSpan.className = 'message-status';
+            statusSpan.textContent = status;
+            messageDiv.appendChild(statusSpan);
+
+            // Add copy button
+            const copyButton = document.createElement('button');
+            copyButton.className = 'copy-button';
+            copyButton.textContent = 'Copiar';
+            copyButton.onclick = () => {
+                navigator.clipboard.writeText(message);
+                copyButton.textContent = 'Copiado!';
+                setTimeout(() => {
+                    copyButton.textContent = 'Copiar';
+                }, 2000);
+            };
+            messageDiv.appendChild(copyButton);
+
+            // Apply syntax highlighting
+            messageDiv.querySelectorAll('pre code').forEach((block) => {
+                hljs.highlightElement(block);
+            });
+
+            messagesDiv.appendChild(messageDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+        }
+
+        function showMistralThinking() {
+            const messagesDiv = document.getElementById('mistralMessages');
+            const thinkingDiv = document.createElement('div');
+            thinkingDiv.className = 'mistral-thinking';
+            thinkingDiv.innerHTML = `Mistral está processando sua mensagem<div class="typing-indicator"><span></span><span></span><span></span></div>`;
+            messagesDiv.appendChild(thinkingDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            return thinkingDiv;
+        }
+
+        function handleMistralKeyPress(event) {
+            if (event.key === 'Enter') {
+                if (!event.shiftKey) {
+                    event.preventDefault();
+                    sendMistralMessage();
+                }
+            }
+        }
+
+        async function sendMistralMessage() {
+            const input = document.getElementById('mistralInput');
+            const message = input.value.trim();
+            const selectedModel = document.getElementById('modelSelect').value;
+            
+            if (!message) return;
+            
+            input.value = '';
+            updateCharCount('mistralInput', 'mistralCharCount');
+            appendMistralMessage(message, true);
+
+            const thinkingDiv = showMistralThinking();
+
+            try {
+                const isProbablyPortuguese = /[áàâãéèêíïóôõöúçñ]/i.test(message) || 
+                                            /\b(não|sim|está|você|obrigado|como|porque|qual|quem|onde|quando|por que|para|com|em|de|da|do|das|dos|olá|oi|bom dia|boa tarde|boa noite)\b/i.test(message);
+                
+                const response = await fetch('/chat', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ 
+                        prompt: message,
+                        mode: 'direct',
+                        model: selectedModel,
+                        language: isProbablyPortuguese ? 'pt' : 'en'
+                    })
+                });
+
+                const data = await response.json();
+                thinkingDiv.remove();
+                
+                if (data.error) {
+                    showError('Erro: ' + data.error);
+                    appendMistralMessage('Erro: ' + data.error, false, 'erro');
+                } else {
+                    appendMistralMessage(data.response, false, 'entregue');
+                }
+            } catch (error) {
+                thinkingDiv.remove();
+                showError('Erro: Não foi possível conectar ao servidor');
+                appendMistralMessage('Erro: Não foi possível conectar ao servidor', false, 'falha');
+            }
+        }
+
+        function updateModel(model) {
+            clearHistory('mistral');
+            const tips = document.querySelector('#mistralMessages .tips');
+            const modelInfo = document.querySelector('.model-info') || document.createElement('div');
+            modelInfo.className = 'model-info active';
+            
+            if (model === 'mistral-chat') {
+                modelInfo.textContent = '7B parâmetros • Mistral';
+                tips.innerHTML = `
+                    <h3>Chat Direto com Mistral</h3>
+                    <p>Converse diretamente com o modelo Mistral sem a estrutura de agentes. Este modo é otimizado para:</p>
+                    <ul>
+                        <li>Respostas técnicas detalhadas</li>
+                        <li>Explicações passo a passo</li>
+                        <li>Análises balanceadas</li>
+                        <li>Suporte multilíngue (responde no mesmo idioma da sua pergunta)</li>
+                        <li>Formatação de código com numeração de linhas</li>
+                    </ul>
+                    <p><small>Modelo de 7B parâmetros, ideal para tarefas complexas</small></p>
+                `;
+            } else {
+                modelInfo.textContent = '2B parâmetros • Gemma';
+                tips.innerHTML = `
+                    <h3>Chat Direto com Gemma</h3>
+                    <p>Converse diretamente com o modelo Gemma, otimizado para respostas concisas e precisas. Este modo oferece:</p>
+                    <ul>
+                        <li>Respostas diretas e objetivas</li>
+                        <li>Processamento rápido</li>
+                        <li>Baixo consumo de recursos</li>
+                        <li>Suporte multilíngue</li>
+                        <li>Ideal para perguntas curtas e específicas</li>
+                    </ul>
+                    <p><small>Modelo de 2B parâmetros, otimizado para eficiência</small></p>
+                `;
+            }
+            
+            const modelSelector = document.querySelector('.model-selector');
+            if (!document.querySelector('.model-info')) {
+                modelSelector.appendChild(modelInfo);
+            }
+            
+            // Animate the transition
+            modelInfo.style.transform = 'scale(1.1)';
+            setTimeout(() => {
+                modelInfo.style.transform = 'scale(1)';
+            }, 200);
+            
+            // Update placeholder text
+            const input = document.getElementById('mistralInput');
+            input.placeholder = model === 'mistral-chat' ? 
+                "Digite sua mensagem para o Mistral... (Enter para enviar, Shift + Enter para nova linha)" :
+                "Digite sua mensagem para o Gemma... (Enter para enviar, Shift + Enter para nova linha)";
+        }
+
+        // Add error display function
+        function showError(message) {
+            const errorDiv = document.createElement('div');
+            errorDiv.className = 'error-message';
+            errorDiv.innerHTML = `<i class="error-icon">⚠️</i> ${message}`;
+            
+            // Show in appropriate container based on active tab
+            const activeContainer = document.querySelector('.chat-container.active');
+            const messagesDiv = activeContainer.querySelector('.chat-messages');
+            messagesDiv.appendChild(errorDiv);
+            messagesDiv.scrollTop = messagesDiv.scrollHeight;
+            
+            // Auto-remove after 5 seconds
+            setTimeout(() => {
+                errorDiv.classList.add('fade-out');
+                setTimeout(() => errorDiv.remove(), 500);
+            }, 5000);
+        }
+
+        function updateCharCount(inputId, countId) {
+            const input = document.getElementById(inputId);
+            const count = document.getElementById(countId);
+            count.textContent = `${input.value.length} caracteres`;
+        }
+    </script>
+</body>
+</html> 
